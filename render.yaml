@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: google-organic-search
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /
+    envVars:
+      - key: SERPAPI_KEY
+        sync: false

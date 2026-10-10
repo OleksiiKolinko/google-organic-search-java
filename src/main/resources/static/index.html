@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Google Organic Results</title>
+  <style>
+    :root{font:16px system-ui,sans-serif;color:#172033;background:#f4f7fb}body{margin:0}.wrap{max-width:900px;margin:8vh auto;padding:32px;background:white;border-radius:16px;box-shadow:0 12px 40px #1a31551a}h1{margin-top:0}.search{display:flex;gap:10px}input{flex:1;padding:14px;border:1px solid #bcc7d8;border-radius:8px;font-size:1rem}button{padding:12px 18px;border:0;border-radius:8px;background:#175cd3;color:white;font-weight:650;cursor:pointer}button.secondary{background:#e8eef8;color:#183153}.tools{display:none;gap:8px;margin:20px 0}.result{padding:16px 0;border-bottom:1px solid #e6eaf0}.result a{color:#175cd3;font-size:1.1rem}.url{color:#18864b;font-size:.9rem;margin:4px 0}.snippet{color:#4c5668}.status{min-height:1.5em;color:#566174;margin-top:12px}.error{color:#b42318}@media(max-width:600px){.wrap{margin:0;padding:24px 18px;border-radius:0}.search{flex-direction:column}}
+  </style>
+</head>
+<body><main class="wrap">
+  <h1>Google – organické výsledky</h1>
+  <p>Zadejte klíčové slovní spojení. Zobrazí se nejvýše 10 neplacených výsledků z první stránky.</p>
+  <form class="search" id="form"><input id="query" aria-label="Klíčové slovní spojení" placeholder="např. nejlepší kavárna Praha" required><button>Hledat</button></form>
+  <div class="status" id="status" role="status"></div>
+  <div class="tools" id="tools"><button class="secondary" data-format="json">Uložit JSON</button><button class="secondary" data-format="csv">Uložit CSV</button></div>
+  <section id="results" aria-live="polite"></section>
+</main>
+<script>
+let lastResults=[];const form=document.querySelector('#form'),statusBox=document.querySelector('#status'),resultsBox=document.querySelector('#results'),toolsBox=document.querySelector('#tools');
+form.addEventListener('submit',async e=>{e.preventDefault();lastResults=[];resultsBox.replaceChildren();toolsBox.style.display='none';statusBox.className='status';statusBox.textContent='Vyhledávám…';try{const query=document.querySelector('#query').value;const res=await fetch(`/api/search?query=${encodeURIComponent(query)}`);const data=await res.json();if(!res.ok)throw Error(data.error||'Vyhledávání se nezdařilo.');lastResults=data;statusBox.textContent=`Nalezeno ${lastResults.length} organických výsledků.`;toolsBox.style.display='flex';for(const item of lastResults){const article=document.createElement('article');article.className='result';const a=document.createElement('a');a.href=item.link;a.target='_blank';a.rel='noopener noreferrer';a.textContent=`${item.position}. ${item.title}`;const url=document.createElement('div');url.className='url';url.textContent=item.displayedLink;const snippet=document.createElement('div');snippet.className='snippet';snippet.textContent=item.snippet;article.append(a,url,snippet);resultsBox.append(article)}}catch(err){statusBox.className='status error';statusBox.textContent=err.message}});
+document.querySelectorAll('[data-format]').forEach(button=>button.addEventListener('click',()=>{const format=button.dataset.format;const content=format==='json'?JSON.stringify(lastResults,null,2):toCsv(lastResults);const blob=new Blob([content],{type:format==='json'?'application/json':'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`google-results.${format}`;a.click();URL.revokeObjectURL(url)}));
+function toCsv(rows){const quote=value=>`"${String(value??'').replaceAll('"','""')}"`;return ['position,title,link,snippet,displayedLink',...rows.map(row=>[row.position,row.title,row.link,row.snippet,row.displayedLink].map(quote).join(','))].join('\r\n')}
+</script></body></html>
